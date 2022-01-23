@@ -1,0 +1,1 @@
+mvn clean package -Dspring.profiles.active=local -DDYNAMODB_ENDPOINT=http://192.168.24.120:8000

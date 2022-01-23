@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: An AWS Elastic application
+Resources:
+  application:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: RentalCarDemo
+      Description: RESTful web API in Java with Spring that provides an HTTP interface for car booking service
+  version:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref application
+      SourceBundle: ./package.zip
+  environment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref application
+      EnvironmentName: ALPHA
+      OptionSettings:
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: AWS_REGION
+          Value: !Ref AWS::Region
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref instanceProfile
+      PlatformArn: arn:aws:elasticbeanstalk:::platform/Java 8 running on 64bit Amazon Linux
+      VersionLabel: !Ref version
+  instanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref role
+  role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: resources
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: ResourceAccess
+                Action:
+                  - '*'
+                Effect: Allow
+                Resource:
+                  - 'arn:aws:dynamodb:*:*:table/rental-*'
+                  - 'arn:aws:sns:*:*:rental-*'
+        - PolicyName: beanstalk
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: BucketAccess
+                Action:
+                  - 's3:Get*'
+                  - 's3:List*'
+                  - 's3:PutObject'
+                Effect: Allow
+                Resource: arn:aws:s3:::elasticbeanstalk*
+              - Sid: MetricsAccess
+                Action:
+                  - 'cloudwatch:PutMetricData'
+                Effect: Allow
+                Resource: '*'
+      Path: /
+  notificationTopic:
+    Type: AWS::SNS::Topic
+Outputs:
+  endpoint:
+    Description: Website URL
+    Value: !GetAtt environment.EndpointURL
+    Export:
+      Name: !Join ["-", [!Ref "AWS::StackName","endpoint"]]

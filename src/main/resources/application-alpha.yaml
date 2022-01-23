@@ -1,0 +1,12 @@
+server:
+  port: 5000
+
+logging:
+  level:
+    root: info
+
+app:
+  api-key: ${ADMIN_API_KEY:f64c5c981f47e838}
+  database:
+    dynamodb-endpoint: ${DYNAMODB_ENDPOINT:https://dynamodb.ap-northeast-1.amazonaws.com}
+    dynamodb-region: ${DYNAMODB_REGION:ap-northeast-1}
